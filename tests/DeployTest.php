@@ -29,7 +29,7 @@ class DeployTest extends \PHPUnit\Framework\TestCase
             });
         $command = new Deploy($kubes);
         $tester = new CommandTester($command);
-        $tester->execute([]);
+        $tester->execute(['revision' => 'head']);
     }
 
     /** @covers ::before */
@@ -40,7 +40,7 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         $before = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun) {
             $this->assertFalse($hasRun, 'Should not have run yet');
             $this->assertFalse($isDryRun);
-            $this->assertSame('master', $rev);
+            $this->assertSame('head', $rev);
             $this->assertSame(40, strlen($hash));
             $count++;
         };
@@ -55,7 +55,7 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         $command->before($before);
         $command->before($before);
         $tester = new CommandTester($command);
-        $tester->execute([]);
+        $tester->execute(['revision' => 'head']);
         $this->assertSame(2, $count, 'Both before hooks should have been fired');
         $this->assertTrue($hasRun, 'Deploy should have run');
     }
@@ -68,7 +68,7 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         $after = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun) {
             $this->assertTrue($hasRun, 'Should have run already');
             $this->assertFalse($isDryRun);
-            $this->assertSame('master', $rev);
+            $this->assertSame('head', $rev);
             $this->assertSame(40, strlen($hash));
             $count++;
         };
@@ -83,7 +83,7 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         $command->after($after);
         $command->after($after);
         $tester = new CommandTester($command);
-        $tester->execute([]);
+        $tester->execute(['revision' => 'head']);
         $this->assertSame(2, $count, 'Both after hooks should have been fired');
         $this->assertTrue($hasRun, 'Deploy should have run');
     }
