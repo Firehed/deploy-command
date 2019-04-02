@@ -31,4 +31,60 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         $tester = new CommandTester($command);
         $tester->execute([]);
     }
+
+    /** @covers ::before */
+    public function testBefore()
+    {
+        $count = 0;
+        $hasRun = false;
+        $before = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun) {
+            $this->assertFalse($hasRun, 'Should not have run yet');
+            $this->assertFalse($isDryRun);
+            $this->assertSame('master', $rev);
+            $this->assertSame(40, strlen($hash));
+            $count++;
+        };
+
+        $kubes = $this->createMock(Deploy\Kubectl::class);
+        $kubes->expects($this->once())
+            ->method('deploy')
+            ->willReturnCallback(function ($hash) use (&$hasRun) {
+                $hasRun = true;
+            });
+        $command = new Deploy($kubes);
+        $command->before($before);
+        $command->before($before);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+        $this->assertSame(2, $count, 'Both before hooks should have been fired');
+        $this->assertTrue($hasRun, 'Deploy should have run');
+    }
+
+    /** @covers ::after */
+    public function testAfter()
+    {
+        $count = 0;
+        $hasRun = false;
+        $after = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun) {
+            $this->assertTrue($hasRun, 'Should have run already');
+            $this->assertFalse($isDryRun);
+            $this->assertSame('master', $rev);
+            $this->assertSame(40, strlen($hash));
+            $count++;
+        };
+
+        $kubes = $this->createMock(Deploy\Kubectl::class);
+        $kubes->expects($this->once())
+            ->method('deploy')
+            ->willReturnCallback(function ($hash) use (&$hasRun) {
+                $hasRun = true;
+            });
+        $command = new Deploy($kubes);
+        $command->after($after);
+        $command->after($after);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+        $this->assertSame(2, $count, 'Both after hooks should have been fired');
+        $this->assertTrue($hasRun, 'Deploy should have run');
+    }
 }
