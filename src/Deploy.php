@@ -24,6 +24,9 @@ class Deploy extends Command
 
     private $kubectl;
 
+    private $before = [];
+    private $after = [];
+
     public function __construct(Deploy\Kubectl $kubectl)
     {
         parent::__construct();
@@ -49,25 +52,51 @@ class Deploy extends Command
             ;
     }
 
+    public function before(callable $before)
+    {
+        $this->before[] = $before;
+    }
+
+    public function after(callable $after)
+    {
+        $this->after[] = $after;
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $logger = new ConsoleLogger($output);
         $this->kubectl->setLogger($logger);
 
-        $hash = $this->getRevisionToDeploy($input);
+        $rev = (string)$input->getArgument(self::ARG_REVISION);
+        $hash = $this->getRevisionToDeploy($rev);
 
-        $isDryRun = $input->getOption(self::OPT_DRY_RUN);
+        $isDryRun = (bool)$input->getOption(self::OPT_DRY_RUN);
 
         $this->kubectl->setDryRun($isDryRun);
+        $this->beforeDeploy($hash, $rev, $isDryRun);
         $this->kubectl->deploy($hash);
+        $this->afterDeploy($hash, $rev, $isDryRun);
         $logger->info('Deployed {rev}', ['rev' => $hash]);
     }
 
-    private function getRevisionToDeploy(InputInterface $input): string
+    private function getRevisionToDeploy(string $rev)
     {
-        $rev = $input->getArgument(self::ARG_REVISION);
         $process = new Process(['git', 'rev-parse', $rev]);
         $process->mustRun();
         return trim($process->getOutput());
+    }
+
+    protected function afterDeploy(string $hash, string $rev, bool $isDryRun)
+    {
+        foreach ($this->after as $after) {
+            $after($hash, $rev, $isDryRun);
+        }
+    }
+
+    protected function beforeDeploy(string $hash, string $rev, bool $isDryRun)
+    {
+        foreach ($this->before as $before) {
+            $before($hash, $rev, $isDryRun);
+        }
     }
 }

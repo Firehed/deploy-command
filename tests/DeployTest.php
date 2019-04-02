@@ -12,12 +12,16 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 class DeployTest extends \PHPUnit\Framework\TestCase
 {
+    private $branch;
+
+    public function setUp()
+    {
+        $this->branch = trim(`git rev-parse --abbrev-ref HEAD`);
+    }
+
     /** @covers ::__construct */
     public function testExecuteUsesHead()
     {
-        if (!`which git`) {
-            $this->markTestSkipped('Git not available on this host');
-        }
         $kubes = $this->createMock(Deploy\Kubectl::class);
         $kubes->expects($this->atLeastOnce())
             ->method('deploy')
@@ -29,6 +33,62 @@ class DeployTest extends \PHPUnit\Framework\TestCase
             });
         $command = new Deploy($kubes);
         $tester = new CommandTester($command);
-        $tester->execute([]);
+        $tester->execute(['revision' => $this->branch]);
+    }
+
+    /** @covers ::before */
+    public function testBefore()
+    {
+        $count = 0;
+        $hasRun = false;
+        $before = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun) {
+            $this->assertFalse($hasRun, 'Should not have run yet');
+            $this->assertFalse($isDryRun);
+            $this->assertSame($this->branch, $rev);
+            $this->assertSame(40, strlen($hash));
+            $count++;
+        };
+
+        $kubes = $this->createMock(Deploy\Kubectl::class);
+        $kubes->expects($this->once())
+            ->method('deploy')
+            ->willReturnCallback(function ($hash) use (&$hasRun) {
+                $hasRun = true;
+            });
+        $command = new Deploy($kubes);
+        $command->before($before);
+        $command->before($before);
+        $tester = new CommandTester($command);
+        $tester->execute(['revision' => $this->branch]);
+        $this->assertSame(2, $count, 'Both before hooks should have been fired');
+        $this->assertTrue($hasRun, 'Deploy should have run');
+    }
+
+    /** @covers ::after */
+    public function testAfter()
+    {
+        $count = 0;
+        $hasRun = false;
+        $after = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun) {
+            $this->assertTrue($hasRun, 'Should have run already');
+            $this->assertFalse($isDryRun);
+            $this->assertSame($this->branch, $rev);
+            $this->assertSame(40, strlen($hash));
+            $count++;
+        };
+
+        $kubes = $this->createMock(Deploy\Kubectl::class);
+        $kubes->expects($this->once())
+            ->method('deploy')
+            ->willReturnCallback(function ($hash) use (&$hasRun) {
+                $hasRun = true;
+            });
+        $command = new Deploy($kubes);
+        $command->after($after);
+        $command->after($after);
+        $tester = new CommandTester($command);
+        $tester->execute(['revision' => $this->branch]);
+        $this->assertSame(2, $count, 'Both after hooks should have been fired');
+        $this->assertTrue($hasRun, 'Deploy should have run');
     }
 }
