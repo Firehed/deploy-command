@@ -65,7 +65,7 @@ class Kubectl implements Log\LoggerAwareInterface
         $namespace = $params['namespace'] ?? 'default';
 
         $command = sprintf(
-            'kubectl set image deploy --namespace %s %s %s=%s',
+            'kubectl set image deploy --namespace %s %s %s=%s --record',
             $namespace,
             $deployment,
             $container,
