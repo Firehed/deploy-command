@@ -12,20 +12,23 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 class DeployTest extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * @var string
+     */
     private $branch;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->branch = trim(`git rev-parse --abbrev-ref HEAD`);
     }
 
     /** @covers ::__construct */
-    public function testExecuteUsesHead()
+    public function testExecuteUsesHead(): void
     {
         $kubes = $this->createMock(Deploy\Kubectl::class);
-        $kubes->expects($this->atLeastOnce())
+        $kubes->expects(self::atLeastOnce())
             ->method('deploy')
-            ->willReturnCallback(function ($tag) {
+            ->willReturnCallback(function ($tag): void {
                 $this->assertTrue(
                     (bool) preg_match('#^[0-9a-f]{40}$#', $tag),
                     'Parameter to deploy should have been a valid git commit hash'
@@ -37,11 +40,11 @@ class DeployTest extends \PHPUnit\Framework\TestCase
     }
 
     /** @covers ::before */
-    public function testBefore()
+    public function testBefore(): void
     {
         $count = 0;
         $hasRun = false;
-        $before = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun) {
+        $before = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun): void {
             $this->assertFalse($hasRun, 'Should not have run yet');
             $this->assertFalse($isDryRun);
             $this->assertSame($this->branch, $rev);
@@ -50,9 +53,9 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         };
 
         $kubes = $this->createMock(Deploy\Kubectl::class);
-        $kubes->expects($this->once())
+        $kubes->expects(self::once())
             ->method('deploy')
-            ->willReturnCallback(function ($hash) use (&$hasRun) {
+            ->willReturnCallback(function ($hash) use (&$hasRun): void {
                 $hasRun = true;
             });
         $command = new Deploy($kubes);
@@ -65,11 +68,11 @@ class DeployTest extends \PHPUnit\Framework\TestCase
     }
 
     /** @covers ::after */
-    public function testAfter()
+    public function testAfter(): void
     {
         $count = 0;
         $hasRun = false;
-        $after = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun) {
+        $after = function ($hash, $rev, $isDryRun) use (&$count, &$hasRun): void {
             $this->assertTrue($hasRun, 'Should have run already');
             $this->assertFalse($isDryRun);
             $this->assertSame($this->branch, $rev);
@@ -78,9 +81,9 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         };
 
         $kubes = $this->createMock(Deploy\Kubectl::class);
-        $kubes->expects($this->once())
+        $kubes->expects(self::once())
             ->method('deploy')
-            ->willReturnCallback(function ($hash) use (&$hasRun) {
+            ->willReturnCallback(function ($hash) use (&$hasRun): void {
                 $hasRun = true;
             });
         $command = new Deploy($kubes);
