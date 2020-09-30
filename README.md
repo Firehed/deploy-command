@@ -1,6 +1,11 @@
 # Symfony Console Deploy Command
 
-[![Build Status](https://travis-ci.org/Firehed/deploy-command.svg?branch=master)](https://travis-ci.org/Firehed/deploy-command)
+[![Latest Stable Version](https://poser.pugx.org/firehed/deploy-command/v)](//packagist.org/packages/firehed/deploy-command)
+[![License](https://poser.pugx.org/firehed/deploy-command/license)](//packagist.org/packages/firehed/deploy-command)
+
+[![Test](https://github.com/Firehed/deploy-command/workflows/Test/badge.svg)](https://github.com/Firehed/deploy-command/actions?query=workflow%3ATest)
+[![Lint](https://github.com/Firehed/deploy-command/workflows/Lint/badge.svg)](https://github.com/Firehed/deploy-command/actions?query=workflow%3ALint)
+[![Static analysis](https://github.com/Firehed/deploy-command/workflows/Static%20analysis/badge.svg)](https://github.com/Firehed/deploy-command/actions?query=workflow%3A%22Static+analysis%22)
 [![codecov](https://codecov.io/gh/Firehed/deploy-command/branch/master/graph/badge.svg)](https://codecov.io/gh/Firehed/deploy-command)
 
 This is a premade Symfony Console component to manually deploy your application.
