@@ -11,24 +11,31 @@ class Kubectl implements Log\LoggerAwareInterface
 {
     use Log\LoggerAwareTrait;
 
+    /**
+     * @var array{
+     *   container: string,
+     *   deployment: string,
+     *   image: string,
+     *   namespace: string,
+     * }[]
+     */
     private $deployments;
 
+    /** @var bool */
     private $dryRun = false;
 
     /**
      * A list of deployment configuration structures. Each must have the
-     * following shape:
-     *
-     * [
-     *   'container' => string,
-     *   'deployment' => 'string',
-     *   'image' => string,
-     *   'namespace' => string,
-     * ]
+     * shape described in the type annotation.
      *
      * Namespace is optional, and will default to 'default'
      *
-     * @param array $deployments Deployment configs
+     * @param array{
+     *   container: string,
+     *   deployment: string,
+     *   image: string,
+     *   namespace: string,
+     * }[] $deployments Deployment configs
      */
     public function __construct(array $deployments)
     {
@@ -45,19 +52,27 @@ class Kubectl implements Log\LoggerAwareInterface
         $this->logger = new Log\NullLogger();
     }
 
-    public function deploy(string $tag)
+    public function deploy(string $tag): void
     {
         foreach ($this->deployments as $deployment) {
             $this->execute($deployment, $tag);
         }
     }
 
-    public function setDryRun(bool $isDryRun)
+    public function setDryRun(bool $isDryRun): void
     {
         $this->dryRun = $isDryRun;
     }
 
-    private function execute(array $params, string $tag)
+    /**
+     * @param array{
+     *   container: string,
+     *   deployment: string,
+     *   image: string,
+     *   namespace: ?string,
+     * } $params Deployment configs
+     */
+    private function execute(array $params, string $tag): void
     {
         $deployment = $params['deployment'];
         $container = $params['container'];
@@ -79,7 +94,7 @@ class Kubectl implements Log\LoggerAwareInterface
             return;
         }
 
-        $process = new Process($command);
+        $process = Process::fromShellCommandline($command);
         $process->mustRun();
         $this->logger->debug($process->getOutput());
     }
