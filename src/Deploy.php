@@ -22,9 +22,13 @@ class Deploy extends Command
     private const ARG_REVISION = 'revision';
     const OPT_DRY_RUN = 'dry-run';
 
+    /** @var Deploy\Kubectl */
     private $kubectl;
 
+    /** @var callable[] */
     private $before = [];
+
+    /** @var callable[] */
     private $after = [];
 
     public function __construct(Deploy\Kubectl $kubectl)
@@ -33,7 +37,7 @@ class Deploy extends Command
         $this->kubectl = $kubectl;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setName('deploy')
             ->setDescription('Deploys to Kubernetes')
@@ -52,12 +56,12 @@ class Deploy extends Command
             ;
     }
 
-    public function before(callable $before)
+    public function before(callable $before): void
     {
         $this->before[] = $before;
     }
 
-    public function after(callable $after)
+    public function after(callable $after): void
     {
         $this->after[] = $after;
     }
@@ -77,23 +81,25 @@ class Deploy extends Command
         $this->kubectl->deploy($hash);
         $this->afterDeploy($hash, $rev, $isDryRun);
         $logger->info('Deployed {rev}', ['rev' => $hash]);
+
+        return 0;
     }
 
-    private function getRevisionToDeploy(string $rev)
+    private function getRevisionToDeploy(string $rev): string
     {
         $process = new Process(['git', 'rev-parse', $rev]);
         $process->mustRun();
         return trim($process->getOutput());
     }
 
-    protected function afterDeploy(string $hash, string $rev, bool $isDryRun)
+    protected function afterDeploy(string $hash, string $rev, bool $isDryRun): void
     {
         foreach ($this->after as $after) {
             $after($hash, $rev, $isDryRun);
         }
     }
 
-    protected function beforeDeploy(string $hash, string $rev, bool $isDryRun)
+    protected function beforeDeploy(string $hash, string $rev, bool $isDryRun): void
     {
         foreach ($this->before as $before) {
             $before($hash, $rev, $isDryRun);
