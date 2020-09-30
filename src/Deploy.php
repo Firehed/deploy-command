@@ -11,6 +11,9 @@ use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
 
+use function assert;
+use function is_string;
+
 /**
  * This is a fancy version of a bash two-liner, which reads or detects the
  * current git commit hash and insert it into an appropriate kubectl command.
@@ -71,7 +74,8 @@ class Deploy extends Command
         $logger = new ConsoleLogger($output);
         $this->kubectl->setLogger($logger);
 
-        $rev = (string)$input->getArgument(self::ARG_REVISION);
+        $rev = $input->getArgument(self::ARG_REVISION);
+        assert(is_string($rev));
         $hash = $this->getRevisionToDeploy($rev);
 
         $isDryRun = (bool)$input->getOption(self::OPT_DRY_RUN);
