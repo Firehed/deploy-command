@@ -94,7 +94,7 @@ class Kubectl implements Log\LoggerAwareInterface
             return;
         }
 
-        $process = new Process($command);
+        $process = Process::fromShellCommandline($command);
         $process->mustRun();
         $this->logger->debug($process->getOutput());
     }
